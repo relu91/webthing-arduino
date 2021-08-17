@@ -8,7 +8,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#pragma once
+#ifndef ETHERNET_WEB_THING_ADAPTER_H
+#define ETHERNET_WEB_THING_ADAPTER_H
 
 #if !defined(ESP32) && !defined(ESP8266)
 
@@ -697,3 +698,5 @@ private:
 };
 
 #endif // neither ESP32 nor ESP8266 defined
+
+#endif //ETHERNET_WEB_THING_ADAPTER_H
