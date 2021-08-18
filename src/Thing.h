@@ -9,7 +9,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#pragma once
+#ifndef THING_H
+#define THING_H
 
 #if !defined(ESP8266) && !defined(ESP32) && !defined(WITHOUT_WS)
 #define WITHOUT_WS 1
@@ -282,6 +283,7 @@ public:
     // 2.9 Property object: A links array (An array of Link objects linking
     // to one or more representations of a Property resource, each with an
     // implied default rel=property.)
+    //Todo: Something wrong here. First element has href = null
     JsonArray inline_links = obj.createNestedArray("forms");
     JsonObject inline_links_prop = inline_links.createNestedObject();
     inline_links_prop["href"] =
@@ -669,3 +671,5 @@ public:
     }
   }
 };
+
+#endif //THING_H

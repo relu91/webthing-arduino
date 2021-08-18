@@ -1,54 +1,11 @@
-/**
- * ESPWebThingAdapter.h
- *
- * Exposes the Web Thing API based on provided ThingDevices.
- * Suitable for ESP32 and ESP8266 using ESPAsyncWebServer and ESPAsyncTCP
- *
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
- */
+#include "ESPWebThingAdapter.h";
 
-#pragma once
 
-#if defined(ESP32) || defined(ESP8266)
+WebThingAdapter::WebThingAdapter(String _name, IPAddress _ip, uint16_t _port,
+                  bool _disableHostValidation)
+      : server(_port), name(_name), ip(_ip.toString()), port(_port), disableHostValidation(_disableHostValidation) {}
 
-#include <ArduinoJson.h>
-#include <ESPAsyncWebServer.h>
-
-#ifdef ESP8266
-#include <ESP8266mDNS.h>
-#else
-#include <ESPmDNS.h>
-#endif
-#include "Thing.h"
-
-#define ESP_MAX_PUT_BODY_SIZE 512
-
-#ifndef LARGE_JSON_DOCUMENT_SIZE
-#ifdef LARGE_JSON_BUFFERS
-#define LARGE_JSON_DOCUMENT_SIZE 4096
-#else
-#define LARGE_JSON_DOCUMENT_SIZE 1024
-#endif
-#endif
-
-#ifndef SMALL_JSON_DOCUMENT_SIZE
-#ifdef LARGE_JSON_BUFFERS
-#define SMALL_JSON_DOCUMENT_SIZE 1024
-#else
-#define SMALL_JSON_DOCUMENT_SIZE 256
-#endif
-#endif
-
-class WebThingAdapter {
-public:
-  WebThingAdapter(String _name, IPAddress _ip, uint16_t _port = 80,
-                  bool _disableHostValidation = false)
-      : server(_port), name(_name), ip(_ip.toString()), port(_port),
-        disableHostValidation(_disableHostValidation) {}
-
-  void begin() {
+void WebThingAdapter::begin() {
     name.toLowerCase();
     if (MDNS.begin(this->name.c_str())) {
       Serial.println("MDNS responder started");
@@ -153,15 +110,15 @@ public:
     }
 
     this->server.begin();
-  }
+}
 
-  void update() {
-#ifdef ESP8266
+void WebThingAdapter::update() {
+  #ifdef ESP8266
     MDNS.update();
-#endif
-  }
+  #endif
+}
 
-  void addDevice(ThingDevice *device) {
+void WebThingAdapter::addDevice(ThingDevice *device) {
     if (this->lastDevice == nullptr) {
       this->firstDevice = device;
       this->lastDevice = device;
@@ -169,21 +126,10 @@ public:
       this->lastDevice->next = device;
       this->lastDevice = device;
     }
-  }
+}
 
-private:
-  AsyncWebServer server;
 
-  String name;
-  String ip;
-  uint16_t port;
-  bool disableHostValidation;
-  ThingDevice *firstDevice = nullptr;
-  ThingDevice *lastDevice = nullptr;
-  char body_data[ESP_MAX_PUT_BODY_SIZE];
-  bool b_has_body_data = false;
-
-  bool verifyHost(AsyncWebServerRequest *request) {
+bool WebThingAdapter::verifyHost(AsyncWebServerRequest *request) {
     if (disableHostValidation) {
       return true;
     }
@@ -204,23 +150,23 @@ private:
     }
     request->send(403);
     return false;
-  }
+}
 
-  void handleUnknown(AsyncWebServerRequest *request) {
+void WebThingAdapter::handleUnknown(AsyncWebServerRequest *request) {
     if (!verifyHost(request)) {
       return;
     }
     request->send(404);
-  }
+}
 
-  void handleOptions(AsyncWebServerRequest *request) {
+void WebThingAdapter::handleOptions(AsyncWebServerRequest *request) {
     if (!verifyHost(request)) {
       return;
     }
     request->send(204);
-  }
+}
 
-  void handleThings(AsyncWebServerRequest *request) {
+void WebThingAdapter::handleThings(AsyncWebServerRequest *request) {
     if (!verifyHost(request)) {
       return;
     }
@@ -238,9 +184,9 @@ private:
 
     serializeJson(thing, *response);
     request->send(response);
-  }
+}
 
-  void handleThing(AsyncWebServerRequest *request, ThingDevice *&device) {
+void WebThingAdapter::handleThing(AsyncWebServerRequest *request, ThingDevice *&device) {
     if (!verifyHost(request)) {
       return;
     }
@@ -253,9 +199,9 @@ private:
 
     serializeJson(descr, *response);
     request->send(response);
-  }
+}
 
-  void handleThingPropertyGet(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingPropertyGet(AsyncWebServerRequest *request,
                               ThingItem *item) {
     if (!verifyHost(request)) {
       return;
@@ -268,9 +214,9 @@ private:
     item->serializeValue(prop);
     serializeJson(prop, *response);
     request->send(response);
-  }
+}
 
-  void handleThingActionGet(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingActionGet(AsyncWebServerRequest *request,
                             ThingDevice *device, ThingAction *action) {
     if (!verifyHost(request)) {
       return;
@@ -309,9 +255,9 @@ private:
       serializeJson(o, *response);
       request->send(response);
     }
-  }
+}
 
-  void handleThingActionDelete(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingActionDelete(AsyncWebServerRequest *request,
                                ThingDevice *device, ThingAction *action) {
     if (!verifyHost(request)) {
       return;
@@ -334,9 +280,9 @@ private:
 
     device->removeAction(actionId);
     request->send(204);
-  }
+}
 
-  void handleThingActionPost(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingActionPost(AsyncWebServerRequest *request,
                              ThingDevice *device, ThingAction *action) {
     if (!verifyHost(request)) {
       return;
@@ -391,9 +337,9 @@ private:
     memset(body_data, 0, sizeof(body_data));
 
     obj->start();
-  }
+}
 
-  void handleThingEventGet(AsyncWebServerRequest *request, ThingDevice *device,
+void WebThingAdapter::handleThingEventGet(AsyncWebServerRequest *request, ThingDevice *device,
                            ThingItem *item) {
     if (!verifyHost(request)) {
       return;
@@ -406,9 +352,9 @@ private:
     device->serializeEventQueue(queue, item->id);
     serializeJson(queue, *response);
     request->send(response);
-  }
+}
 
-  void handleThingPropertiesGet(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingPropertiesGet(AsyncWebServerRequest *request,
                                 ThingItem *rootItem) {
     if (!verifyHost(request)) {
       return;
@@ -425,9 +371,9 @@ private:
     }
     serializeJson(prop, *response);
     request->send(response);
-  }
+}
 
-  void handleThingActionsGet(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingActionsGet(AsyncWebServerRequest *request,
                              ThingDevice *device) {
     if (!verifyHost(request)) {
       return;
@@ -440,9 +386,10 @@ private:
     device->serializeActionQueue(queue);
     serializeJson(queue, *response);
     request->send(response);
-  }
+}
 
-  void handleThingActionsPost(AsyncWebServerRequest *request,
+
+void WebThingAdapter::handleThingActionsPost(AsyncWebServerRequest *request,
                               ThingDevice *device) {
     if (!verifyHost(request)) {
       return;
@@ -497,9 +444,9 @@ private:
     memset(body_data, 0, sizeof(body_data));
 
     obj->start();
-  }
+}
 
-  void handleThingEventsGet(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingEventsGet(AsyncWebServerRequest *request,
                             ThingDevice *device) {
     if (!verifyHost(request)) {
       return;
@@ -512,9 +459,9 @@ private:
     device->serializeEventQueue(queue);
     serializeJson(queue, *response);
     request->send(response);
-  }
+}
 
-  void handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len,
+void WebThingAdapter::handleBody(AsyncWebServerRequest *request, uint8_t *data, size_t len,
                   size_t index, size_t total) {
     if (total >= ESP_MAX_PUT_BODY_SIZE ||
         index + len >= ESP_MAX_PUT_BODY_SIZE) {
@@ -523,9 +470,9 @@ private:
     // copy to internal buffer
     memcpy(&body_data[index], data, len);
     b_has_body_data = true;
-  }
+}
 
-  void handleThingPropertyPut(AsyncWebServerRequest *request,
+void WebThingAdapter::handleThingPropertyPut(AsyncWebServerRequest *request,
                               ThingDevice *device, ThingProperty *property) {
     if (!verifyHost(request)) {
       return;
@@ -561,7 +508,4 @@ private:
 
     b_has_body_data = false;
     memset(body_data, 0, sizeof(body_data));
-  }
-};
-
-#endif // ESP
+}
